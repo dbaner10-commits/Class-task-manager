@@ -1,120 +1,114 @@
-/* --- App.css --- */
-
-/* App Background */
+/* Make the whole page look modern and clean */
 body {
-  background-color: #f4f7f6;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f4f7f6;
   color: #333;
   margin: 0;
   padding: 20px;
 }
 
-/* Main Container */
-.app-container {
+/* The main white box in the center */
+.container {
   max-width: 800px;
   margin: 0 auto;
-  background-color: #ffffff;
+  background: white;
   padding: 30px;
-  border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
-h1, h2, h3 {
-  color: #2c3e50;
-}
-
+/* Headings */
 h1 {
+  color: #2c3e50;
   text-align: center;
   border-bottom: 2px solid #3498db;
   padding-bottom: 10px;
 }
-
-/* Form Styles */
-.form-container {
-  background-color: #f9f9f9;
-  padding: 20px;
-  border-radius: 8px;
-  border: 1px solid #ddd;
-  margin-bottom: 20px;
+h2 {
+  color: #34495e;
+  margin-top: 30px;
 }
 
-.input-field {
+/* Inputs and Forms */
+label {
+  font-weight: bold;
+  font-size: 14px;
+  color: #555;
+}
+input, textarea, select {
   width: 100%;
   padding: 10px;
   margin-top: 5px;
   margin-bottom: 15px;
   border: 1px solid #ccc;
-  border-radius: 5px;
+  border-radius: 6px;
   box-sizing: border-box;
-  font-size: 16px;
+  font-family: inherit;
 }
 
-/* Button Styles */
+/* Buttons */
 button {
-  padding: 10px 15px;
+  padding: 10px 20px;
   border: none;
-  border-radius: 5px;
-  font-size: 16px;
+  border-radius: 6px;
   cursor: pointer;
   font-weight: bold;
   transition: 0.2s;
 }
-
+button:hover {
+  opacity: 0.8;
+}
 .btn-primary {
   background-color: #3498db;
   color: white;
+  width: 100%;
+  font-size: 16px;
 }
-
-.btn-primary:hover {
-  background-color: #2980b9;
-}
-
-.btn-edit {
-  background-color: #f1c40f;
-  color: #333;
-  margin-right: 10px;
-}
-
-.btn-edit:hover {
+.btn-warning {
   background-color: #f39c12;
+  color: white;
 }
-
-.btn-delete {
+.btn-danger {
   background-color: #e74c3c;
   color: white;
 }
-
-.btn-delete:hover {
-  background-color: #c0392b;
+.btn-secondary {
+  background-color: #95a5a6;
+  color: white;
 }
 
 /* Search and Filter Row */
-.search-row {
+.search-bar {
   display: flex;
   gap: 15px;
+  background: #ecf0f1;
+  padding: 15px;
+  border-radius: 8px;
   margin-bottom: 20px;
+}
+.search-bar input, .search-bar select {
+  margin-bottom: 0;
 }
 
 /* Task Cards */
 .task-card {
-  background-color: #fff;
-  border-left: 5px solid #3498db;
-  padding: 15px;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  padding: 20px;
   margin-bottom: 15px;
-  border-radius: 5px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-  border-top: 1px solid #eee;
-  border-right: 1px solid #eee;
-  border-bottom: 1px solid #eee;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  border-left: 6px solid #3498db; /* Default blue strip */
 }
 
-.task-card h3 {
-  margin-top: 0;
-}
-
-.status-badge {
+/* Red Error Message Box */
+.error-box {
+  background-color: #fee;
+  color: #c0392b;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #e74c3c;
+  margin-bottom: 15px;
+  text-align: center;
   font-weight: bold;
-  padding: 3px 8px;
-  border-radius: 12px;
-  font-size: 14px;
 }

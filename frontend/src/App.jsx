@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import "./App.css"; 
+import "./App.css"; // NEW: Connects our beautiful CSS file!
 
 function App() {
   const [tasks, setTasks] = useState([]);
-
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [date, setDate] = useState("");
@@ -12,8 +11,8 @@ function App() {
   const [editingId, setEditingId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
-  
-  // ADDED: A new state to hold our error messages
+
+  // NEW: State for our error message instead of annoying popups
   const [errorMsg, setErrorMsg] = useState("");
 
   const getTasks = async () => {
@@ -29,14 +28,12 @@ function App() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // CHANGED: Instead of alert(), we set our nice error message state
+    // NEW: Clean Error Handling
     if (!title || !description || !date) {
       setErrorMsg("⚠️ Please fill out all fields before saving the task.");
-      return; 
+      return;
     }
-
-    // If everything is filled out, clear any old errors!
-    setErrorMsg("");
+    setErrorMsg(""); // Clear error if everything is fine!
 
     const taskData = { title, description, date, status };
 
@@ -46,6 +43,7 @@ function App() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(taskData)
       });
+      
       const updatedTask = await response.json();
       setTasks(tasks.map((task) => (task.id === editingId ? updatedTask : task)));
       setEditingId(null);
@@ -55,6 +53,7 @@ function App() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(taskData)
       });
+
       const data = await response.json();
       setTasks([...tasks, data]);
     }
@@ -70,14 +69,14 @@ function App() {
     setTasks(tasks.filter((task) => task.id !== id));
   };
 
-  const handleEdit = (task) => {
+  const handleEditClick = (task) => {
     setTitle(task.title);
     setDescription(task.description);
     setDate(task.date);
     setStatus(task.status);
     setEditingId(task.id);
-    // Clear any errors when someone clicks edit
-    setErrorMsg(""); 
+    setErrorMsg(""); // Clear errors when editing
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const filteredTasks = tasks.filter((task) => {
@@ -87,105 +86,95 @@ function App() {
   });
 
   return (
-    <div className="app-container">
+    <div className="container">
       <h1>📚 Class Task Management System</h1>
-      <p style={{ textAlign: "center" }}>Manage class tasks date-wise.</p>
-
+      
       <h2>{editingId !== null ? "✏️ Edit Task" : "➕ Add New Task"}</h2>
       
-      {/* ADDED: If there is an error, show this red box! */}
-      {errorMsg && (
-        <div style={{ backgroundColor: "#ffeaea", color: "red", padding: "10px", borderRadius: "5px", marginBottom: "15px", border: "1px solid red" }}>
-          {errorMsg}
-        </div>
-      )}
+      {/* NEW: Displays the error message safely on the screen */}
+      {errorMsg && <div className="error-box">{errorMsg}</div>}
       
-      <form onSubmit={handleSubmit} className="form-container">
-        <div>
-          <label>Task Title</label>
-          <input
-            type="text"
-            className="input-field"
-            placeholder="Enter task title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
-        </div>
-        <div>
-          <label>Description</label>
-          <textarea
-            className="input-field"
-            placeholder="Enter task description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-        </div>
-        <div>
-          <label>Date</label>
-          <input
-            type="date"
-            className="input-field"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-          />
-        </div>
-        <div>
-          <label>Status</label>
-          <select 
-            className="input-field" 
-            value={status} 
-            onChange={(e) => setStatus(e.target.value)}
+      <form onSubmit={handleSubmit}>
+        <label>Task Title</label>
+        <input type="text" placeholder="Enter task title" value={title} onChange={(e) => setTitle(e.target.value)} />
+        
+        <label>Description</label>
+        <textarea placeholder="Enter task description" rows="3" value={description} onChange={(e) => setDescription(e.target.value)} />
+        
+        <label>Date</label>
+        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+        
+        <label>Status</label>
+        <select value={status} onChange={(e) => setStatus(e.target.value)}>
+          <option value="Pending">Pending</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Completed">Completed</option>
+        </select>
+        
+        <button type="submit" className={editingId !== null ? "btn-warning btn-primary" : "btn-primary"}>
+          {editingId !== null ? "Update Task" : "Add Task"}
+        </button>
+        
+        {editingId !== null && (
+          <button 
+            type="button" 
+            className="btn-secondary"
+            onClick={() => {
+              setEditingId(null);
+              setTitle("");
+              setDescription("");
+              setDate("");
+              setStatus("Pending");
+              setErrorMsg("");
+            }} 
+            style={{ marginTop: "10px", width: "100%" }}
           >
+            Cancel Edit
+          </button>
+        )}
+      </form>
+
+      <h2>📋 Task List</h2>
+
+      <div className="search-bar">
+        <div style={{ flex: 1 }}>
+          <label>🔍 Search:</label>
+          <input 
+            type="text" 
+            placeholder="Search by title..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <div style={{ flex: 1 }}>
+          <label>📂 Filter by Status:</label>
+          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+            <option value="All">All Statuses</option>
             <option value="Pending">Pending</option>
             <option value="In Progress">In Progress</option>
             <option value="Completed">Completed</option>
           </select>
         </div>
-        <button type="submit" className="btn-primary">
-          {editingId !== null ? "Update Task" : "Add Task"}
-        </button>
-      </form>
-      
-      <h2>📋 Task List</h2>
-
-      <div className="search-row">
-        <input
-          type="text"
-          className="input-field"
-          style={{ marginBottom: "0" }}
-          placeholder="Search tasks by title..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-        <select 
-          className="input-field"
-          style={{ marginBottom: "0", width: "200px" }}
-          value={filterStatus} 
-          onChange={(e) => setFilterStatus(e.target.value)}
-        >
-          <option value="All">All Statuses</option>
-          <option value="Pending">Pending</option>
-          <option value="In Progress">In Progress</option>
-          <option value="Completed">Completed</option>
-        </select>
       </div>
 
       {filteredTasks.length === 0 ? (
-        <p style={{ textAlign: "center", color: "#7f8c8d" }}>No tasks found.</p>
+        <p style={{ textAlign: "center", color: "#777" }}>No tasks found.</p>
       ) : (
         filteredTasks.map((task) => (
           <div key={task.id} className="task-card">
-            <h3>{task.title}</h3>
-            <p><strong>Description:</strong> {task.description}</p>
-            <p><strong>Date:</strong> {task.date}</p>
-            <p><strong>Status:</strong> <span className="status-badge">{task.status}</span></p>
+            <h3 style={{ margin: "0 0 10px 0", color: "#2c3e50" }}>{task.title}</h3>
+            <p style={{ margin: "5px 0" }}><strong>Description:</strong> {task.description}</p>
+            <p style={{ margin: "5px 0" }}><strong>Date:</strong> {task.date}</p>
+            <p style={{ margin: "5px 0" }}><strong>Status:</strong> {task.status}</p>
             
-            <button onClick={() => handleEdit(task)} className="btn-edit">
-              Edit Task
-            </button>
-            <button onClick={() => deleteTask(task.id)} className="btn-delete">
-              Delete Task
-            </button>
+            <div style={{ marginTop: "15px" }}>
+              <button className="btn-warning" onClick={() => handleEditClick(task)} style={{ marginRight: "10px" }}>
+                Edit
+              </button>
+              <button className="btn-danger" onClick={() => deleteTask(task.id)}>
+                Delete
+              </button>
+            </div>
           </div>
         ))
       )}
