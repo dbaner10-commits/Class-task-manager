@@ -13,7 +13,7 @@ function App() {
   const [filterStatus, setFilterStatus] = useState("All");
 
   const getTasks = async () => {
-    const response = await fetch("http://localhost:5000/api/tasks");
+    const response = await fetch("[https://task-manager-backend-27w4.onrender.com](https://task-manager-backend-27w4.onrender.com)/api/tasks");
     const data = await response.json();
     setTasks(data);
   };
