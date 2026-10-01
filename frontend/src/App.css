@@ -1,114 +1,183 @@
-/* Make the whole page look modern and clean */
-body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #f4f7f6;
-  color: #333;
-  margin: 0;
-  padding: 20px;
+import { useEffect, useState } from "react";
+import "./App.css"; // This brings the beautiful CSS back!
+
+function App() {
+  const [tasks, setTasks] = useState([]);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [date, setDate] = useState("");
+  const [status, setStatus] = useState("Pending");
+
+  const [editId, setEditId] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterStatus, setFilterStatus] = useState("All");
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const getTasks = async () => {
+    try {
+      const response = await fetch("http://localhost:5000/api/tasks");
+      const data = await response.json();
+      setTasks(data);
+    } catch (error) {
+      console.error("Backend server might not be running yet.");
+    }
+  };
+
+  useEffect(() => {
+    getTasks();
+  }, []);
+
+  const handleSaveTask = async (e) => {
+    e.preventDefault();
+
+    if (!title || !description || !date) {
+      setErrorMsg("⚠️ Please fill out all fields before saving the task.");
+      return;
+    }
+    setErrorMsg("");
+
+    const taskData = { title, description, date, status };
+
+    if (editId !== null) {
+      const response = await fetch(`http://localhost:5000/api/tasks/${editId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(taskData)
+      });
+      const updatedTask = await response.json();
+      setTasks(tasks.map((task) => (task.id === editId ? updatedTask : task)));
+      setEditId(null);
+    } else {
+      const response = await fetch("http://localhost:5000/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(taskData)
+      });
+      const data = await response.json();
+      setTasks([...tasks, data]);
+    }
+
+    setTitle("");
+    setDescription("");
+    setDate("");
+    setStatus("Pending");
+  };
+
+  const deleteTask = async (id) => {
+    await fetch(`http://localhost:5000/api/tasks/${id}`, { method: "DELETE" });
+    setTasks(tasks.filter((task) => task.id !== id));
+  };
+
+  const triggerEdit = (task) => {
+    setTitle(task.title);
+    setDescription(task.description);
+    setDate(task.date);
+    setStatus(task.status);
+    setEditId(task.id);
+    setErrorMsg("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const filteredTasks = tasks.filter((task) => {
+    const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = filterStatus === "All" || task.status === filterStatus;
+    return matchesSearch && matchesStatus;
+  });
+
+  return (
+    <div className="container">
+      <h1>📚 Class Task Management System</h1>
+      
+      <h2>{editId !== null ? "✏️ Edit Task" : "➕ Add New Task"}</h2>
+      
+      {errorMsg && <div className="error-box">{errorMsg}</div>}
+      
+      <form onSubmit={handleSaveTask}>
+        <label>Task Title</label>
+        <input type="text" placeholder="Enter task title" value={title} onChange={(e) => setTitle(e.target.value)} />
+        
+        <label>Description</label>
+        <textarea placeholder="Enter task description" rows="3" value={description} onChange={(e) => setDescription(e.target.value)} />
+        
+        <label>Date</label>
+        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+        
+        <label>Status</label>
+        <select value={status} onChange={(e) => setStatus(e.target.value)}>
+          <option value="Pending">Pending</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Completed">Completed</option>
+        </select>
+        
+        <button type="submit" className={editId !== null ? "btn-warning btn-primary" : "btn-primary"}>
+          {editId !== null ? "Update Task" : "Add Task"}
+        </button>
+        
+        {editId !== null && (
+          <button 
+            type="button" 
+            className="btn-secondary"
+            onClick={() => {
+              setEditId(null);
+              setTitle("");
+              setDescription("");
+              setDate("");
+              setStatus("Pending");
+              setErrorMsg("");
+            }} 
+            style={{ marginTop: "10px", width: "100%" }}
+          >
+            Cancel Edit
+          </button>
+        )}
+      </form>
+
+      <h2>📋 Task List</h2>
+
+      <div className="search-bar">
+        <div style={{ flex: 1 }}>
+          <label>🔍 Search:</label>
+          <input 
+            type="text" 
+            placeholder="Search by title..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <div style={{ flex: 1 }}>
+          <label>📂 Filter by Status:</label>
+          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+            <option value="All">All Statuses</option>
+            <option value="Pending">Pending</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Completed">Completed</option>
+          </select>
+        </div>
+      </div>
+
+      {filteredTasks.length === 0 ? (
+        <p style={{ textAlign: "center", color: "#777" }}>No tasks found.</p>
+      ) : (
+        filteredTasks.map((task) => (
+          <div key={task.id} className="task-card">
+            <h3 style={{ margin: "0 0 10px 0", color: "#2c3e50" }}>{task.title}</h3>
+            <p style={{ margin: "5px 0" }}><strong>Description:</strong> {task.description}</p>
+            <p style={{ margin: "5px 0" }}><strong>Date:</strong> {task.date}</p>
+            <p style={{ margin: "5px 0" }}><strong>Status:</strong> {task.status}</p>
+            
+            <div style={{ marginTop: "15px" }}>
+              <button className="btn-warning" onClick={() => triggerEdit(task)} style={{ marginRight: "10px" }}>
+                Edit
+              </button>
+              <button className="btn-danger" onClick={() => deleteTask(task.id)}>
+                Delete
+              </button>
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+  );
 }
 
-/* The main white box in the center */
-.container {
-  max-width: 800px;
-  margin: 0 auto;
-  background: white;
-  padding: 30px;
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-}
-
-/* Headings */
-h1 {
-  color: #2c3e50;
-  text-align: center;
-  border-bottom: 2px solid #3498db;
-  padding-bottom: 10px;
-}
-h2 {
-  color: #34495e;
-  margin-top: 30px;
-}
-
-/* Inputs and Forms */
-label {
-  font-weight: bold;
-  font-size: 14px;
-  color: #555;
-}
-input, textarea, select {
-  width: 100%;
-  padding: 10px;
-  margin-top: 5px;
-  margin-bottom: 15px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  box-sizing: border-box;
-  font-family: inherit;
-}
-
-/* Buttons */
-button {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: 0.2s;
-}
-button:hover {
-  opacity: 0.8;
-}
-.btn-primary {
-  background-color: #3498db;
-  color: white;
-  width: 100%;
-  font-size: 16px;
-}
-.btn-warning {
-  background-color: #f39c12;
-  color: white;
-}
-.btn-danger {
-  background-color: #e74c3c;
-  color: white;
-}
-.btn-secondary {
-  background-color: #95a5a6;
-  color: white;
-}
-
-/* Search and Filter Row */
-.search-bar {
-  display: flex;
-  gap: 15px;
-  background: #ecf0f1;
-  padding: 15px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-}
-.search-bar input, .search-bar select {
-  margin-bottom: 0;
-}
-
-/* Task Cards */
-.task-card {
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  padding: 20px;
-  margin-bottom: 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-  border-left: 6px solid #3498db; /* Default blue strip */
-}
-
-/* Red Error Message Box */
-.error-box {
-  background-color: #fee;
-  color: #c0392b;
-  padding: 10px;
-  border-radius: 6px;
-  border: 1px solid #e74c3c;
-  margin-bottom: 15px;
-  text-align: center;
-  font-weight: bold;
-}
+export default App;
