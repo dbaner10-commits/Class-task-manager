@@ -1,117 +1,94 @@
 const express = require("express");
 const cors = require("cors");
-const fs = require("fs"); // ADDED: Built-in Node module to read/write files
+const mongoose = require("mongoose");
 
 const app = express();
 const PORT = 5000;
-const DATA_FILE = "./tasks.json"; // ADDED: The file where tasks will be permanently saved
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 
-// ADDED: Helper function to get tasks from the JSON file
-function readTasks() {
-  try {
-    const data = fs.readFileSync(DATA_FILE, "utf8");
-    return JSON.parse(data);
-  } catch (err) {
-    // If the file doesn't exist yet, return an empty array
-    return [];
+// 1. Connect to MongoDB Cloud (Using your exact credentials)
+const mongoURI = "mongodb+srv://dbaner10_db_user:ORbG3mqWTnfynP9c@cluster0.uysih8p.mongodb.net/task-manager?appName=Cluster0";
+
+mongoose.connect(mongoURI)
+  .then(() => console.log("✅ Successfully connected to MongoDB Cloud!"))
+  .catch((err) => console.error("❌ MongoDB connection error:", err));
+
+// 2. Define how a Task should look in the database
+const taskSchema = new mongoose.Schema({
+  title: String,
+  description: String,
+  date: String,
+  status: String
+});
+
+// Trick to smoothly convert MongoDB's "_id" into standard "id" for our React frontend
+taskSchema.set('toJSON', {
+  transform: (document, returnedObject) => {
+    returnedObject.id = returnedObject._id.toString();
+    delete returnedObject._id;
+    delete returnedObject.__v;
   }
-}
+});
 
-// ADDED: Helper function to save tasks into the JSON file
-function writeTasks(tasks) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(tasks, null, 2));
-}
+const Task = mongoose.model("Task", taskSchema);
 
-// ===============================
-// GET ALL TASKS
-// ===============================
-app.get("/api/tasks", (req, res) => {
-    const tasks = readTasks(); // Read from file instead of memory
+// 3. API Routes
+
+// GET: Fetch all tasks
+app.get("/api/tasks", async (req, res) => {
+  try {
+    const tasks = await Task.find({});
     res.json(tasks);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch tasks" });
+  }
 });
 
-// ===============================
-// GET ONE TASK
-// ===============================
-app.get("/api/tasks/:id", (req, res) => {
-    const tasks = readTasks();
-    const id = Number(req.params.id);
-    const task = tasks.find(task => task.id === id);
-
-    if (!task) {
-        return res.status(404).json({ message: "Task not found" });
-    }
-    res.json(task);
-});
-
-// ===============================
-// ADD NEW TASK
-// ===============================
-app.post("/api/tasks", (req, res) => {
-    const tasks = readTasks();
-    
-    const { title, description, date, status } = req.body;
-    
-    const newTask = {
-        id: Date.now(),
-        title: title,
-        description: description,
-        date: date,
-        status: status
-    };
-
-    tasks.push(newTask);
-    writeTasks(tasks); // Save updated list to the file!
-
-    res.status(201).json(newTask);
-});
-
-// ===============================
-// UPDATE TASK
-// ===============================
-app.put("/api/tasks/:id", (req, res) => {
-    const tasks = readTasks();
-    const id = Number(req.params.id);
-    const taskIndex = tasks.findIndex(task => task.id === id);
-
-    if (taskIndex === -1) {
-        return res.status(404).json({ message: "Task not found" });
-    }
-
-    tasks[taskIndex] = { ...tasks[taskIndex], ...req.body };
-    writeTasks(tasks); // Save updated list to the file!
-
-    res.json(tasks[taskIndex]);
-});
-
-// ===============================
-// DELETE TASK
-// ===============================
-app.delete("/api/tasks/:id", (req, res) => {
-    const tasks = readTasks();
-    const id = Number(req.params.id);
-    const taskIndex = tasks.findIndex(task => task.id === id);
-
-    if (taskIndex === -1) {
-        return res.status(404).json({ message: "Task not found" });
-    }
-
-    const deletedTask = tasks.splice(taskIndex, 1);
-    writeTasks(tasks); // Save updated list to the file!
-
-    res.json({
-        message: "Task deleted successfully",
-        task: deletedTask[0]
+// POST: Add a new task
+app.post("/api/tasks", async (req, res) => {
+  try {
+    const newTask = new Task({
+      title: req.body.title,
+      description: req.body.description,
+      date: req.body.date,
+      status: req.body.status
     });
+    
+    const savedTask = await newTask.save();
+    res.json(savedTask);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to save task" });
+  }
 });
 
-// ===============================
-// START SERVER
-// ===============================
+// PUT: Update an existing task
+app.put("/api/tasks/:id", async (req, res) => {
+  try {
+    const updatedTask = await Task.findByIdAndUpdate(
+      req.params.id, 
+      req.body, 
+      { new: true } // Returns the updated task instead of the old one
+    );
+    res.json(updatedTask);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to update task" });
+  }
+});
+
+// DELETE: Delete a task
+app.delete("/api/tasks/:id", async (req, res) => {
+  try {
+    await Task.findByIdAndDelete(req.params.id);
+    res.json({ message: "Task deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to delete task" });
+  }
+});
+
+// Start Server
 app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
+  console.log(`🚀 Backend server is running on http://localhost:${PORT}`);
 });
